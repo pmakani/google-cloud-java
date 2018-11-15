@@ -85,6 +85,9 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
   private static final String EMPTY_BYTE_ARRAY_CRC32C = "AAAAAA==";
   private static final String PATH_DELIMITER = "/";
 
+  /* The GCS library uses the GCS JSON API endpoint but signedUrls use the GCS XML API endpoint.*/
+  private static final String STORAGE_XML_HOST_NAME = "https://storage.googleapis.com";
+
   private static final Function<Tuple<Storage, Boolean>, Boolean> DELETE_FUNCTION =
       new Function<Tuple<Storage, Boolean>, Boolean>() {
         @Override
@@ -535,7 +538,13 @@ final class StorageImpl extends BaseService<StorageOptions> implements Storage {
       SignatureInfo signatureInfo = buildSignatureInfo(optionMap, blobInfo, expiration, path);
       byte[] signatureBytes =
           credentials.sign(signatureInfo.constructUnsignedPayload().getBytes(UTF_8));
-      StringBuilder stBuilder = new StringBuilder("https://storage.googleapis.com").append(path);
+      StringBuilder stBuilder = new StringBuilder();
+      if (optionMap.get(SignUrlOption.Option.HOST_NAME) == null) {
+        stBuilder.append(STORAGE_XML_HOST_NAME).append(path);
+      } else {
+        stBuilder.append(optionMap.get(SignUrlOption.Option.HOST_NAME)).append(path);
+      }
+      
       String signature =
           URLEncoder.encode(BaseEncoding.base64().encode(signatureBytes), UTF_8.name());
       stBuilder.append("?GoogleAccessId=").append(credentials.getAccount());
