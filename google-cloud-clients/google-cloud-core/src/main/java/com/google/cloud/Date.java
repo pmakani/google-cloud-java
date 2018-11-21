@@ -71,12 +71,14 @@ public final class Date implements Comparable<Date>, Serializable {
   }
 
   /**
-   * Set the Google Date
+   * Set the Google Date.
+   *
+   * <p>Calender.MONTH starts from 0 while G C J date starts from 1
    *
    * @param date the date of the Google Date.
    * @return java.util.Date
    */
-  public static java.util.Date toDate(Date date) {
+  public static java.util.Date toJavaUtilDate(Date date) {
     Calendar cal = Calendar.getInstance();
     cal.set(Calendar.HOUR_OF_DAY, 0);
     cal.set(Calendar.MINUTE, 0);
@@ -89,10 +91,12 @@ public final class Date implements Comparable<Date>, Serializable {
   /**
    * Set the Java Util Date.
    *
+   * <p>Calender.MONTH starts from 0 while G C J date starts from 1
+   *
    * @param date the date of the java.util.Date
    * @return Google Java Date
    */
-  public static Date fromDate(java.util.Date date) {
+  public static Date fromJavaUtilDate(java.util.Date date) {
     Calendar cal = Calendar.getInstance();
     cal.setTime(date);
     cal.set(Calendar.HOUR_OF_DAY, 0);

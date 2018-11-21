@@ -19,11 +19,11 @@ package com.google.cloud;
 import static com.google.common.testing.SerializableTester.reserializeAndAssert;
 import static com.google.common.truth.Truth.assertThat;
 
-import java.util.Calendar;
-import com.google.common.testing.EqualsTester;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.common.testing.EqualsTester;
 
 /** Unit tests for {@link Date}. */
 @RunWith(JUnit4.class)
@@ -73,24 +73,19 @@ public class DateTest {
   }
 
   @Test
-  public void testToDate() {
-    Date date = Date.parseDate("2016-09-18");
-    java.util.Date date1 = Date.toDate(date);
-    Calendar cal = Calendar.getInstance();
-    cal.setTime(date1);
-    assertThat(cal.get(Calendar.YEAR)).isEqualTo(2016);
-    assertThat(cal.get(Calendar.MONTH) + 1).isEqualTo(9);
-    assertThat(cal.get(Calendar.DAY_OF_MONTH)).isEqualTo(18);
+  public void testToJavaUtilDate() {
+    Date gcDate = Date.parseDate("2016-09-18");
+    java.util.Date juDate = Date.toJavaUtilDate(gcDate);
+    assertThat(juDate).isEqualTo(Date.toJavaUtilDate(gcDate));
   }
 
   @Test
-  public void testFromDate() {
-    Date date = Date.parseDate("2016-09-18");
-    java.util.Date date1 = Date.toDate(date);
-    Date date2 = Date.fromDate(date1);
-    assertThat(date2.getYear()).isEqualTo(2016);
-    assertThat(date2.getMonth()).isEqualTo(9);
-    assertThat(date2.getDayOfMonth()).isEqualTo(18);
+  public void testFromJavaUtilDate() {
+    java.util.Date date = Date.toJavaUtilDate(Date.parseDate("2016-09-18"));
+    Date date1 = Date.fromJavaUtilDate(date);
+    assertThat(date1.getYear()).isEqualTo(2016);
+    assertThat(date1.getMonth()).isEqualTo(9);
+    assertThat(date1.getDayOfMonth()).isEqualTo(18);
   }
 
   private void assertDescending(Date... dates) {
