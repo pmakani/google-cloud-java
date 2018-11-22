@@ -19,6 +19,9 @@ package com.google.cloud;
 import static com.google.common.testing.SerializableTester.reserializeAndAssert;
 import static com.google.common.truth.Truth.assertThat;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -73,17 +76,21 @@ public class DateTest {
   }
 
   @Test
-  public void testToJavaUtilDate() {
+  public void testToJavaUtilDate() throws ParseException {
+	SimpleDateFormat df =  new SimpleDateFormat("yyyy-MM-dd"); 
     Date gcDate = Date.parseDate("2016-09-18");
-    java.util.Date juDate = Date.toJavaUtilDate(gcDate);
-    assertThat(juDate).isEqualTo(Date.toJavaUtilDate(gcDate));
+    java.util.Date juDate1 = df.parse("2016-09-18"); 
+    java.util.Date juDate2 = Date.toJavaUtilDate(gcDate);
+    assertThat(juDate1).isEqualTo(juDate2);
   }
 
   @Test
-  public void testFromJavaUtilDate() {
-    java.util.Date juDate = Date.toJavaUtilDate(Date.parseDate("2016-09-18"));
-    Date gcDate = Date.fromJavaUtilDate(juDate);
-    assertThat(gcDate).isEqualTo(Date.fromJavaUtilDate(juDate));
+  public void testFromJavaUtilDate() throws ParseException {
+    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+    java.util.Date juDate = df.parse("2016-09-18");
+    Date gcDate1 = Date.fromJavaUtilDate(juDate);
+    Date gcDate2 = Date.parseDate("2016-09-18");
+    assertThat(gcDate1).isEqualTo(gcDate2);
   }
 
   private void assertDescending(Date... dates) {

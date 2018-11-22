@@ -82,7 +82,7 @@ public final class Date implements Comparable<Date>, Serializable {
     cal.set(Calendar.MINUTE, 0);
     cal.set(Calendar.SECOND, 0);
     cal.set(Calendar.MILLISECOND, 0);
-    // Calender.MONTH starts from 0 while G C J date starts from 1
+    // Calender.MONTH starts from 0 while G C date starts from 1
     cal.set(date.year, date.month - 1, date.dayOfMonth);
     return cal.getTime();
   }
@@ -100,7 +100,7 @@ public final class Date implements Comparable<Date>, Serializable {
     cal.set(Calendar.MINUTE, 0);
     cal.set(Calendar.SECOND, 0);
     cal.set(Calendar.MILLISECOND, 0);
-    // Calender.MONTH starts from 0 while G C J date starts from 1
+    // Calender.MONTH starts from 0 while G C date starts from 1
     return new Date(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
   }
 
