@@ -32,6 +32,7 @@ import com.google.common.testing.EqualsTester;
 @RunWith(JUnit4.class)
 public class DateTest {
 
+  private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");	
   @Test
   public void parseDate() {
     Date date = Date.parseDate("2016-09-18");
@@ -77,20 +78,20 @@ public class DateTest {
 
   @Test
   public void testToJavaUtilDate() throws ParseException {
-	SimpleDateFormat df =  new SimpleDateFormat("yyyy-MM-dd"); 
     Date gcDate = Date.parseDate("2016-09-18");
-    java.util.Date juDate1 = df.parse("2016-09-18"); 
+    java.util.Date juDate1 = SIMPLE_DATE_FORMAT.parse("2016-09-18"); 
     java.util.Date juDate2 = Date.toJavaUtilDate(gcDate);
     assertThat(juDate1).isEqualTo(juDate2);
   }
 
   @Test
   public void testFromJavaUtilDate() throws ParseException {
-    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-    java.util.Date juDate = df.parse("2016-09-18");
-    Date gcDate1 = Date.fromJavaUtilDate(juDate);
-    Date gcDate2 = Date.parseDate("2016-09-18");
-    assertThat(gcDate1).isEqualTo(gcDate2);
+    java.util.Date juDate = SIMPLE_DATE_FORMAT.parse("2016-09-18");
+    Date gcDate = Date.fromJavaUtilDate(juDate);
+    assertThat(gcDate.getYear()).isEqualTo(2016);
+    assertThat(gcDate.getMonth()).isEqualTo(9);
+    assertThat(gcDate.getDayOfMonth()).isEqualTo(18);
+   
   }
 
   private void assertDescending(Date... dates) {
