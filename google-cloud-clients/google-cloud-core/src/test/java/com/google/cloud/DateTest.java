@@ -81,11 +81,9 @@ public class DateTest {
 
   @Test
   public void testFromJavaUtilDate() {
-    java.util.Date date = Date.toJavaUtilDate(Date.parseDate("2016-09-18"));
-    Date date1 = Date.fromJavaUtilDate(date);
-    assertThat(date1.getYear()).isEqualTo(2016);
-    assertThat(date1.getMonth()).isEqualTo(9);
-    assertThat(date1.getDayOfMonth()).isEqualTo(18);
+    java.util.Date juDate = Date.toJavaUtilDate(Date.parseDate("2016-09-18"));
+    Date gcDate = Date.fromJavaUtilDate(juDate);
+    assertThat(gcDate).isEqualTo(Date.fromJavaUtilDate(juDate));
   }
 
   private void assertDescending(Date... dates) {
