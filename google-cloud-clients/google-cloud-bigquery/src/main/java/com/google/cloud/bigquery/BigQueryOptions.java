@@ -33,6 +33,7 @@ public class BigQueryOptions extends ServiceOptions<BigQuery, BigQueryOptions> {
   private static final String BIGQUERY_SCOPE = "https://www.googleapis.com/auth/bigquery";
   private static final Set<String> SCOPES = ImmutableSet.of(BIGQUERY_SCOPE);
   private static final long serialVersionUID = -2437598817433266049L;
+  private boolean setThrowNotFound;
 
   public static class DefaultBigQueryFactory implements BigQueryFactory {
 
@@ -110,6 +111,14 @@ public class BigQueryOptions extends ServiceOptions<BigQuery, BigQueryOptions> {
 
   protected BigQueryRpc getBigQueryRpcV2() {
     return (BigQueryRpc) getRpc();
+  }
+
+  public void setThrowNotFound(boolean setThrowNotFound) {
+    this.setThrowNotFound = setThrowNotFound;
+  }
+
+  public boolean getThrowNotFound() {
+    return setThrowNotFound;
   }
 
   @SuppressWarnings("unchecked")
