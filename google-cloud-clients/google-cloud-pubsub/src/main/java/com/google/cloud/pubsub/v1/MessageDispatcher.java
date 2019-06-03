@@ -16,6 +16,7 @@
 
 package com.google.cloud.pubsub.v1;
 
+import com.codahale.metrics.SlidingTimeWindowArrayReservoir;
 import com.google.api.core.ApiClock;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
@@ -23,7 +24,6 @@ import com.google.api.core.InternalApi;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.batching.FlowController.FlowControlException;
-import com.google.api.gax.core.Distribution;
 import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.pubsub.v1.PubsubMessage;
@@ -88,7 +88,7 @@ class MessageDispatcher {
   private ScheduledFuture<?> backgroundJob;
 
   // To keep track of number of seconds the receiver takes to process messages.
-  private final Distribution ackLatencyDistribution;
+  private final SlidingTimeWindowArrayReservoir ackLatencyDistribution;
 
   /** Stores the data needed to asynchronously modify acknowledgement deadlines. */
   static class PendingModifyAckDeadline {
@@ -163,7 +163,7 @@ class MessageDispatcher {
         case ACK:
           destination = pendingAcks;
           // Record the latency rounded to the next closest integer.
-          ackLatencyDistribution.record(
+          ackLatencyDistribution.update(
               Ints.saturatedCast(
                   (long) Math.ceil((clock.millisTime() - receivedTimeMillis) / 1000D)));
           break;
@@ -188,7 +188,7 @@ class MessageDispatcher {
       AckProcessor ackProcessor,
       Duration ackExpirationPadding,
       Duration maxAckExtensionPeriod,
-      Distribution ackLatencyDistribution,
+      SlidingTimeWindowArrayReservoir ackLatencyDistribution,
       FlowController flowController,
       Executor executor,
       ScheduledExecutorService systemExecutor,
@@ -376,7 +376,7 @@ class MessageDispatcher {
   /** Compute the ideal deadline, set subsequent modacks to this deadline, and return it. */
   @InternalApi
   int computeDeadlineSeconds() {
-    int sec = ackLatencyDistribution.getPercentile(PERCENTILE_FOR_ACK_DEADLINE_UPDATES);
+    int sec = Double.valueOf(ackLatencyDistribution.getSnapshot().get999thPercentile()).intValue();
 
     // Use Ints.constrainToRange when we get guava 21.
     if (sec < Subscriber.MIN_ACK_DEADLINE_SECONDS) {

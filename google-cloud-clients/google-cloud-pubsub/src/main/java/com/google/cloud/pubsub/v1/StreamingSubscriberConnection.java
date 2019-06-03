@@ -18,6 +18,7 @@ package com.google.cloud.pubsub.v1;
 
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
+import com.codahale.metrics.SlidingTimeWindowArrayReservoir;
 import com.google.api.core.AbstractApiService;
 import com.google.api.core.ApiClock;
 import com.google.api.core.ApiFuture;
@@ -25,7 +26,6 @@ import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
-import com.google.api.gax.core.Distribution;
 import com.google.api.gax.grpc.GrpcCallContext;
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.rpc.ApiException;
@@ -81,7 +81,7 @@ final class StreamingSubscriberConnection extends AbstractApiService implements 
       MessageReceiver receiver,
       Duration ackExpirationPadding,
       Duration maxAckExtensionPeriod,
-      Distribution ackLatencyDistribution,
+      SlidingTimeWindowArrayReservoir ackLatencyDistribution,
       SubscriberStub stub,
       int channelAffinity,
       FlowController flowController,

@@ -16,6 +16,7 @@
 
 package com.google.cloud.pubsub.v1;
 
+import com.codahale.metrics.SlidingTimeWindowArrayReservoir;
 import com.google.api.core.AbstractApiService;
 import com.google.api.core.ApiClock;
 import com.google.api.core.ApiFunction;
@@ -27,7 +28,6 @@ import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.batching.FlowController.LimitExceededBehavior;
 import com.google.api.gax.core.CredentialsProvider;
-import com.google.api.gax.core.Distribution;
 import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.core.InstantiatingExecutorProvider;
 import com.google.api.gax.rpc.HeaderProvider;
@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -106,8 +107,8 @@ public class Subscriber extends AbstractApiService {
   // An instantiation of the SystemExecutorProvider used for processing acks
   // and other system actions.
   @Nullable private final ScheduledExecutorService alarmsExecutor;
-  private final Distribution ackLatencyDistribution =
-      new Distribution(MAX_ACK_DEADLINE_SECONDS + 1);
+  private final SlidingTimeWindowArrayReservoir ackLatencyDistribution =
+      new SlidingTimeWindowArrayReservoir(MIN_ACK_DEADLINE_SECONDS, TimeUnit.SECONDS);
 
   private SubscriberStub subStub;
   private final SubscriberStubSettings subStubSettings;
@@ -183,7 +184,7 @@ public class Subscriber extends AbstractApiService {
     // We regularly look up the distribution for a good subscription deadline.
     // So we seed the distribution with something reasonable to start with.
     // Distribution is percentile-based, so this value will eventually lose importance.
-    ackLatencyDistribution.record(60);
+    ackLatencyDistribution.update(60);
   }
 
   /**
