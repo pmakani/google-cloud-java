@@ -16,6 +16,7 @@
 
 package com.google.cloud.pubsub.v1;
 
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.SlidingTimeWindowArrayReservoir;
 import com.google.api.core.AbstractApiService;
 import com.google.api.core.ApiClock;
@@ -107,8 +108,9 @@ public class Subscriber extends AbstractApiService {
   // An instantiation of the SystemExecutorProvider used for processing acks
   // and other system actions.
   @Nullable private final ScheduledExecutorService alarmsExecutor;
-  private final SlidingTimeWindowArrayReservoir ackLatencyDistribution =
+  private final SlidingTimeWindowArrayReservoir reservoir =
       new SlidingTimeWindowArrayReservoir(6, TimeUnit.HOURS);
+  private final Histogram ackLatencyDistribution = new Histogram(reservoir);
 
   private SubscriberStub subStub;
   private final SubscriberStubSettings subStubSettings;

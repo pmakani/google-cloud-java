@@ -18,7 +18,7 @@ package com.google.cloud.pubsub.v1;
 
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
-import com.codahale.metrics.SlidingTimeWindowArrayReservoir;
+import com.codahale.metrics.Histogram;
 import com.google.api.core.AbstractApiService;
 import com.google.api.core.ApiClock;
 import com.google.api.core.ApiFuture;
@@ -81,7 +81,7 @@ final class StreamingSubscriberConnection extends AbstractApiService implements 
       MessageReceiver receiver,
       Duration ackExpirationPadding,
       Duration maxAckExtensionPeriod,
-      SlidingTimeWindowArrayReservoir ackLatencyDistribution,
+      Histogram ackLatencyDistribution,
       SubscriberStub stub,
       int channelAffinity,
       FlowController flowController,

@@ -18,6 +18,7 @@ package com.google.cloud.pubsub.v1;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.SlidingTimeWindowArrayReservoir;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.batching.FlowController;
@@ -49,6 +50,8 @@ public class MessageDispatcherTest {
           // No-op; don't do anything.
         }
       };
+  private final SlidingTimeWindowArrayReservoir reservoir =
+      new SlidingTimeWindowArrayReservoir(6, TimeUnit.HOURS);
 
   private MessageDispatcher dispatcher;
   private LinkedBlockingQueue<AckReplyConsumer> consumers;
@@ -114,7 +117,7 @@ public class MessageDispatcherTest {
             processor,
             Duration.ofSeconds(5),
             Duration.ofMinutes(60),
-            new SlidingTimeWindowArrayReservoir(6, TimeUnit.HOURS),
+            new Histogram(reservoir),
             flowController,
             MoreExecutors.directExecutor(),
             systemExecutor,

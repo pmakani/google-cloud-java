@@ -16,7 +16,7 @@
 
 package com.google.cloud.pubsub.v1;
 
-import com.codahale.metrics.SlidingTimeWindowArrayReservoir;
+import com.codahale.metrics.Histogram;
 import com.google.api.core.ApiClock;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
@@ -87,7 +87,7 @@ class MessageDispatcher {
   private ScheduledFuture<?> backgroundJob;
 
   // To keep track of number of seconds the receiver takes to process messages.
-  private final SlidingTimeWindowArrayReservoir ackLatencyDistribution;
+  private final Histogram ackLatencyDistribution;
 
   /** Stores the data needed to asynchronously modify acknowledgement deadlines. */
   static class PendingModifyAckDeadline {
@@ -187,7 +187,7 @@ class MessageDispatcher {
       AckProcessor ackProcessor,
       Duration ackExpirationPadding,
       Duration maxAckExtensionPeriod,
-      SlidingTimeWindowArrayReservoir ackLatencyDistribution,
+      Histogram ackLatencyDistribution,
       FlowController flowController,
       Executor executor,
       ScheduledExecutorService systemExecutor,
