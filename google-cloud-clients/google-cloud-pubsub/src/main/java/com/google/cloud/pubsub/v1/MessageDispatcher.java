@@ -57,7 +57,6 @@ import org.threeten.bp.temporal.ChronoUnit;
  */
 class MessageDispatcher {
   private static final Logger logger = Logger.getLogger(MessageDispatcher.class.getName());
-  private static final double PERCENTILE_FOR_ACK_DEADLINE_UPDATES = 99.9;
 
   @InternalApi static final Duration PENDING_ACKS_SEND_DELAY = Duration.ofMillis(100);
 

@@ -108,7 +108,7 @@ public class Subscriber extends AbstractApiService {
   // and other system actions.
   @Nullable private final ScheduledExecutorService alarmsExecutor;
   private final SlidingTimeWindowArrayReservoir ackLatencyDistribution =
-      new SlidingTimeWindowArrayReservoir(MAX_ACK_DEADLINE_SECONDS + 1, TimeUnit.SECONDS);
+      new SlidingTimeWindowArrayReservoir(6, TimeUnit.HOURS);
 
   private SubscriberStub subStub;
   private final SubscriberStubSettings subStubSettings;

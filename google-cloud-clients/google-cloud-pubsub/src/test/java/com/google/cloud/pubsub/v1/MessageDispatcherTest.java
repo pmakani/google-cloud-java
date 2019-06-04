@@ -21,9 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.codahale.metrics.SlidingTimeWindowArrayReservoir;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.batching.FlowController;
-import com.google.api.gax.core.Distribution;
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
@@ -51,25 +49,6 @@ public class MessageDispatcherTest {
           // No-op; don't do anything.
         }
       };
-
-  private static final ReceivedMessage TEST_MESSAGE1 =
-      ReceivedMessage.newBuilder()
-          .setAckId("ackid1")
-          .setMessage(
-              PubsubMessage.newBuilder().setData(ByteString.copyFromUtf8("test-message1")).build())
-          .build();
-  private static final ReceivedMessage TEST_MESSAGE2 =
-      ReceivedMessage.newBuilder()
-          .setAckId("ackid2")
-          .setMessage(
-              PubsubMessage.newBuilder().setData(ByteString.copyFromUtf8("test-message2")).build())
-          .build();
-  private static final ReceivedMessage TEST_MESSAGE3 =
-      ReceivedMessage.newBuilder()
-          .setAckId("ackid3")
-          .setMessage(
-              PubsubMessage.newBuilder().setData(ByteString.copyFromUtf8("test-message3")).build())
-          .build();
 
   private MessageDispatcher dispatcher;
   private LinkedBlockingQueue<AckReplyConsumer> consumers;
@@ -135,8 +114,7 @@ public class MessageDispatcherTest {
             processor,
             Duration.ofSeconds(5),
             Duration.ofMinutes(60),
-            new SlidingTimeWindowArrayReservoir(
-                Subscriber.MAX_ACK_DEADLINE_SECONDS + 1, TimeUnit.SECONDS),
+            new SlidingTimeWindowArrayReservoir(6, TimeUnit.HOURS),
             flowController,
             MoreExecutors.directExecutor(),
             systemExecutor,
@@ -224,23 +202,5 @@ public class MessageDispatcherTest {
     consumers.take().ack();
 
     assertThat(dispatcher.computeDeadlineSeconds()).isEqualTo(42);
-  }
-
-  @Test
-  public void testExpireTime() throws InterruptedException {
-    dispatcher.processReceivedMessages(Collections.singletonList(TEST_MESSAGE1));
-    clock.advance(60, TimeUnit.SECONDS);
-    consumers.take().ack();
-    dispatcher.processOutstandingAckOperations();
-    dispatcher.processReceivedMessages(Collections.singletonList(TEST_MESSAGE2));
-    clock.advance(60, TimeUnit.SECONDS);
-    consumers.take().ack();
-    dispatcher.processOutstandingAckOperations();
-    dispatcher.processReceivedMessages(Collections.singletonList(TEST_MESSAGE3));
-    clock.advance(60, TimeUnit.SECONDS);
-    consumers.take().ack();
-    dispatcher.processOutstandingAckOperations();
-    assertThat(dispatcher.computeDeadlineSeconds()).isEqualTo(60);
-    dispatcher.stop();
   }
 }
