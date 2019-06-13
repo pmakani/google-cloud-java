@@ -17,6 +17,7 @@
 package com.google.cloud.pubsub.v1;
 
 import com.google.api.core.ApiClock;
+import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
 import com.google.api.core.InternalApi;
@@ -36,7 +37,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -86,6 +89,8 @@ class MessageDispatcher {
   private final AtomicBoolean extendDeadline = new AtomicBoolean(true);
   private final Lock jobLock;
   private ScheduledFuture<?> backgroundJob;
+  private static final ScheduledExecutorService EXECUTOR_SERVICE =
+      Executors.newSingleThreadScheduledExecutor();
 
   // To keep track of number of seconds the receiver takes to process messages.
   private final Distribution ackLatencyDistribution;
@@ -179,7 +184,7 @@ class MessageDispatcher {
   }
 
   interface AckProcessor {
-    void sendAckOperations(
+    ApiFuture<?> sendAckOperations(
         List<String> acksToSend, List<PendingModifyAckDeadline> ackDeadlineExtensions);
   }
 
@@ -268,10 +273,12 @@ class MessageDispatcher {
         backgroundJob.cancel(false);
         backgroundJob = null;
       }
+      processOutstandingAckOperations().get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
     } finally {
       jobLock.unlock();
     }
-    processOutstandingAckOperations();
   }
 
   @InternalApi
@@ -419,10 +426,10 @@ class MessageDispatcher {
   }
 
   @InternalApi
-  void processOutstandingAckOperations() {
-    List<PendingModifyAckDeadline> modifyAckDeadlinesToSend = new ArrayList<>();
+  ApiFuture<?> processOutstandingAckOperations() {
+    final List<PendingModifyAckDeadline> modifyAckDeadlinesToSend = new ArrayList<>();
 
-    List<String> acksToSend = new ArrayList<>();
+    final List<String> acksToSend = new ArrayList<>();
     pendingAcks.drainTo(acksToSend);
     logger.log(Level.FINER, "Sending {0} acks", acksToSend.size());
 
@@ -441,7 +448,7 @@ class MessageDispatcher {
       modifyAckDeadlinesToSend.add(receiptsToSend);
     }
 
-    ackProcessor.sendAckOperations(acksToSend, modifyAckDeadlinesToSend);
+    return ackProcessor.sendAckOperations(acksToSend, modifyAckDeadlinesToSend);
   }
 
   private Instant now() {
