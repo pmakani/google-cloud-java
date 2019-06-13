@@ -89,8 +89,6 @@ class MessageDispatcher {
   private final AtomicBoolean extendDeadline = new AtomicBoolean(true);
   private final Lock jobLock;
   private ScheduledFuture<?> backgroundJob;
-  private static final ScheduledExecutorService EXECUTOR_SERVICE =
-      Executors.newSingleThreadScheduledExecutor();
 
   // To keep track of number of seconds the receiver takes to process messages.
   private final Distribution ackLatencyDistribution;
