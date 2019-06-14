@@ -19,6 +19,7 @@ package com.google.cloud.pubsub.v1;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.core.FixedExecutorProvider;
 import com.google.api.gax.core.InstantiatingExecutorProvider;
 import com.google.api.gax.core.NoCredentialsProvider;
@@ -37,10 +38,16 @@ import io.grpc.StatusException;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /** Tests for {@link Subscriber}. */
 public class SubscriberTest {
@@ -110,6 +117,33 @@ public class SubscriberTest {
         expectedChannelCount, fakeSubscriberServiceImpl.waitForOpenedStreams(expectedChannelCount));
 
     subscriber.stopAsync().awaitTerminated();
+  }
+
+  @Test
+  public void testFailedChannelTerminated() throws InterruptedException, TimeoutException {
+    final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(5);
+    ExecutorProvider provider =
+        new ExecutorProvider() {
+          @Override
+          public boolean shouldAutoClose() {
+            return true;
+          }
+
+          @Override
+          public ScheduledExecutorService getExecutor() {
+            return scheduledExecutorService;
+          }
+        };
+
+    try {
+      Subscriber subscriber =
+          startSubscriber(
+              getTestSubscriberBuilder(testReceiver).setSystemExecutorProvider(provider));
+      subscriber.stopAsync().awaitTerminated(10, TimeUnit.SECONDS);
+      assertTrue(scheduledExecutorService.awaitTermination(10, TimeUnit.SECONDS));
+    } finally {
+      scheduledExecutorService.shutdownNow();
+    }
   }
 
   @Test(expected = IllegalStateException.class)
