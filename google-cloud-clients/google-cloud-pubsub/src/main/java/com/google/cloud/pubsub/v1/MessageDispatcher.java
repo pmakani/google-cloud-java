@@ -39,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -271,7 +270,10 @@ class MessageDispatcher {
         backgroundJob.cancel(false);
         backgroundJob = null;
       }
-      processOutstandingAckOperations().get();
+      ApiFuture future = processOutstandingAckOperations();
+      if (future != null) {
+        future.get();
+      }
     } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     } finally {
