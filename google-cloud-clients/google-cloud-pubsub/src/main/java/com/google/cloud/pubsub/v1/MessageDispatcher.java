@@ -270,10 +270,7 @@ class MessageDispatcher {
         backgroundJob.cancel(false);
         backgroundJob = null;
       }
-      ApiFuture future = processOutstandingAckOperations();
-      if (future != null) {
-        future.get();
-      }
+      processOutstandingAckOperations().get();
     } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     } finally {
