@@ -32,8 +32,7 @@ public class ProjectInfoTest {
   private static final Long PROJECT_NUMBER = 123L;
   private static final Long CREATE_TIME_MILLIS = 123456789L;
   private static final ProjectInfo.State STATE = ProjectInfo.State.DELETE_REQUESTED;
-  private static final ProjectInfo.ResourceId PARENT =
-      new ProjectInfo.ResourceId("id", "organization");
+  private static final ResourceId PARENT = ResourceId.of("id", "organization");
   private static final ProjectInfo FULL_PROJECT_INFO =
       ProjectInfo.newBuilder(PROJECT_ID)
           .setName(NAME)

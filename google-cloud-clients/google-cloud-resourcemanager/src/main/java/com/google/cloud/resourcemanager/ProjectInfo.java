@@ -106,50 +106,6 @@ public class ProjectInfo implements Serializable {
     }
   }
 
-  static class ResourceId implements Serializable {
-
-    private static final long serialVersionUID = -325199985993344726L;
-
-    private final String id;
-    private final String type;
-
-    ResourceId(String id, String type) {
-      this.id = checkNotNull(id);
-      this.type = checkNotNull(type);
-    }
-
-    String getId() {
-      return id;
-    }
-
-    String type() {
-      return type;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      return obj instanceof ResourceId && Objects.equals(toPb(), ((ResourceId) obj).toPb());
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(id, type);
-    }
-
-    com.google.api.services.cloudresourcemanager.model.ResourceId toPb() {
-      com.google.api.services.cloudresourcemanager.model.ResourceId resourceIdPb =
-          new com.google.api.services.cloudresourcemanager.model.ResourceId();
-      resourceIdPb.setId(id);
-      resourceIdPb.setType(type.toLowerCase());
-      return resourceIdPb;
-    }
-
-    static ResourceId fromPb(
-        com.google.api.services.cloudresourcemanager.model.ResourceId resourceIdPb) {
-      return new ResourceId(resourceIdPb.getId(), resourceIdPb.getType());
-    }
-  }
-
   /** Builder for {@code ProjectInfo}. */
   public abstract static class Builder {
 
