@@ -44,6 +44,11 @@ public class ResourceId implements Serializable {
     return obj instanceof ResourceId && Objects.equals(toPb(), ((ResourceId) obj).toPb());
   }
 
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, type);
+  }
+
   public static ResourceId of(String id, String type) {
     return new ResourceId(checkNotNull(id), checkNotNull(type));
   }
