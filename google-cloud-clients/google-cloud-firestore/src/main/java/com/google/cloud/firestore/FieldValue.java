@@ -19,6 +19,8 @@ package com.google.cloud.firestore;
 import com.google.common.base.Preconditions;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.DocumentTransform.FieldTransform;
+import com.google.firestore.v1.Value;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -128,9 +130,16 @@ public abstract class FieldValue {
 
   static class ArrayUnionFieldValue extends FieldValue {
     final List<Object> elements;
+    final Class<?> clazz;
 
     ArrayUnionFieldValue(List<Object> elements) {
       this.elements = elements;
+      this.clazz = null;
+    }
+
+    ArrayUnionFieldValue(List<Object> elements, Class clazz) {
+      this.elements = elements;
+      this.clazz = clazz;
     }
 
     @Override
@@ -152,9 +161,20 @@ public abstract class FieldValue {
     FieldTransform toProto(FieldPath path) {
       ArrayValue.Builder encodedElements = ArrayValue.newBuilder();
 
-      for (Object element : elements) {
-        encodedElements.addValues(
-            UserDataConverter.encodeValue(path, element, UserDataConverter.ARGUMENT));
+      try {
+        for (Object element : elements) {
+          if (clazz == null) {
+            encodedElements.addValues(
+                UserDataConverter.encodeValue(path, element, UserDataConverter.ARGUMENT));
+          }
+          List<Value> values =
+              UserDataConverter.encodeValue(path, element, clazz, UserDataConverter.ARGUMENT);
+          for (Value value : values) {
+            encodedElements.addValues(value);
+          }
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
       }
 
       FieldTransform.Builder fieldTransform = FieldTransform.newBuilder();
@@ -300,6 +320,12 @@ public abstract class FieldValue {
   public static FieldValue arrayUnion(@Nonnull Object... elements) {
     Preconditions.checkArgument(elements.length > 0, "arrayUnion() expects at least 1 element");
     return new ArrayUnionFieldValue(Arrays.asList(elements));
+  }
+
+  @Nonnull
+  public static FieldValue arrayUnion(Class clazz, @Nonnull Object... elements) {
+    Preconditions.checkArgument(elements.length > 0, "arrayUnion() expects at least 1 element");
+    return new ArrayUnionFieldValue(Arrays.asList(elements), clazz);
   }
 
   /**

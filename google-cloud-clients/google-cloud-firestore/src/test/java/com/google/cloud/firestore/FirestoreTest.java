@@ -29,6 +29,8 @@ import com.google.cloud.firestore.spi.v1.FirestoreRpc;
 import com.google.firestore.v1.BatchGetDocumentsRequest;
 import com.google.firestore.v1.ListCollectionIdsRequest;
 import java.util.List;
+
+import com.google.firestore.v1.Value;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -133,6 +135,14 @@ public class FirestoreTest {
     assertEquals(1, request.getMask().getFieldPathsCount());
     assertEquals("foo.bar", request.getMask().getFieldPaths(0));
   }
+
+  @Test
+  public void arrayUnionWithPojo() {
+    DocumentReference ref = firestoreMock.document("coll/doc1");
+    FieldValue value = FieldValue.arrayUnion(Student.class, new Student(1,"test",70.00,true));
+    ref.update("foo",value);
+  }
+
 
   @Test
   public void arrayUnionEquals() {

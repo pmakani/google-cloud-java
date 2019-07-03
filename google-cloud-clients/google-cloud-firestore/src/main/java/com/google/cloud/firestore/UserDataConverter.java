@@ -22,6 +22,8 @@ import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.NullValue;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -176,5 +178,81 @@ class UserDataConverter {
     }
 
     throw FirestoreException.invalidState("Cannot convert %s to Firestore Value", sanitizedObject);
+  }
+
+  @Nullable
+  static List<Value> encodeValue(
+      FieldPath path, @Nullable Object sanitizedObject, Class clazz, EncodingOptions options)
+      throws IllegalAccessException {
+    List<Value> values = new ArrayList<>();
+    if (sanitizedObject.getClass().isAssignableFrom(clazz)) {
+      Field[] fields = sanitizedObject.getClass().getDeclaredFields();
+      for (Field field : fields) {
+        field.setAccessible(true);
+        Object o = field.get(sanitizedObject);
+        if (o == null) {
+          values.add(Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
+        } else if (o instanceof String) {
+          values.add(Value.newBuilder().setStringValue((String) o).build());
+        } else if (o instanceof Integer) {
+          values.add(Value.newBuilder().setIntegerValue((Integer) o).build());
+        } else if (o instanceof Long) {
+          values.add(Value.newBuilder().setIntegerValue((Long) o).build());
+        } else if (o instanceof Double) {
+          values.add(Value.newBuilder().setDoubleValue((Double) o).build());
+        } else if (o instanceof Boolean) {
+          values.add(Value.newBuilder().setBooleanValue((Boolean) o).build());
+        } else if (o instanceof Date) {
+          Date date = (Date) o;
+          long epochSeconds = TimeUnit.MILLISECONDS.toSeconds(date.getTime());
+          long msOffset = date.getTime() - TimeUnit.SECONDS.toMillis(epochSeconds);
+          com.google.protobuf.Timestamp.Builder timestampBuilder =
+              com.google.protobuf.Timestamp.newBuilder();
+          timestampBuilder.setSeconds(epochSeconds);
+          timestampBuilder.setNanos((int) TimeUnit.MILLISECONDS.toNanos(msOffset));
+          values.add(Value.newBuilder().setTimestampValue(timestampBuilder.build()).build());
+        } else if (o instanceof Timestamp) {
+          Timestamp timestamp = (Timestamp) o;
+          values.add(Value.newBuilder().setTimestampValue(timestamp.toProto()).build());
+        } else if (o instanceof List) {
+          ArrayValue.Builder res = ArrayValue.newBuilder();
+          int i = 0;
+          for (Object child : (List) o) {
+            Value encodedValue = encodeValue(path.append(Integer.toString(i++)), child, options);
+            if (encodedValue != null) {
+              res.addValues(encodedValue);
+            }
+          }
+          values.add(Value.newBuilder().setArrayValue(res.build()).build());
+        } else if (o instanceof GeoPoint) {
+          GeoPoint geopoint = (GeoPoint) o;
+          values.add(Value.newBuilder().setGeoPointValue(geopoint.toProto()).build());
+        } else if (o instanceof Blob) {
+          Blob blob = (Blob) o;
+          values.add(Value.newBuilder().setBytesValue(blob.toByteString()).build());
+        } else if (o instanceof DocumentReference) {
+          DocumentReference docRef = (DocumentReference) o;
+          values.add(Value.newBuilder().setReferenceValue(docRef.getName()).build());
+        } else if (o instanceof Map) {
+          MapValue.Builder res = MapValue.newBuilder();
+          Map<String, Object> map = (Map<String, Object>) o;
+
+          for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Value encodedValue =
+                encodeValue(path.append(entry.getKey()), entry.getValue(), options);
+            if (encodedValue != null) {
+              res.putFields(entry.getKey(), encodedValue);
+            }
+          }
+
+          // If we encounter an empty object, we always need to send it to make sure
+          // the server creates a map entry.
+          if (map.isEmpty() || res.getFieldsCount() != 0) {
+            values.add(Value.newBuilder().setMapValue(res.build()).build());
+          }
+        }
+      }
+    }
+    return values;
   }
 }
