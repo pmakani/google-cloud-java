@@ -126,6 +126,9 @@ public interface Firestore extends Service<FirestoreOptions>, AutoCloseable {
   @Nonnull
   WriteBatch batch();
 
+  /** Gets a FirestoreRpc. */
+  FirestoreRpc getFirestoreRpc();
+
   /**
    * Closes the gRPC channels associated with this instance and frees up their resources. This
    * method blocks until all channels are closed. Once this method is called, this Firestore client
@@ -133,7 +136,4 @@ public interface Firestore extends Service<FirestoreOptions>, AutoCloseable {
    */
   @Override
   void close() throws Exception;
-
-  /** Gets a FirestoreRpc. */
-  FirestoreRpc getFirestoreRpc();
 }

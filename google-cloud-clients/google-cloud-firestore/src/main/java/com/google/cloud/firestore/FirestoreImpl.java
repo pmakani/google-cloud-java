@@ -459,13 +459,13 @@ class FirestoreImpl implements Firestore {
   }
 
   @Override
-  public void close() throws Exception {
-    firestoreClient.close();
-    closed = true;
+  public FirestoreRpc getFirestoreRpc() {
+    return firestoreClient;
   }
 
   @Override
-  public FirestoreRpc getFirestoreRpc() {
-    return firestoreClient;
+  public void close() throws Exception {
+    firestoreClient.close();
+    closed = true;
   }
 }
