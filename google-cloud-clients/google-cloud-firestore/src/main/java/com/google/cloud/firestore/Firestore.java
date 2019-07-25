@@ -18,6 +18,8 @@ package com.google.cloud.firestore;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.Service;
+import com.google.cloud.firestore.spi.v1.FirestoreRpc;
+
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -131,4 +133,7 @@ public interface Firestore extends Service<FirestoreOptions>, AutoCloseable {
    */
   @Override
   void close() throws Exception;
+
+  /** Gets a FirestoreRpc. */
+  FirestoreRpc getFirestoreRpc();
 }

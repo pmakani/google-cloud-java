@@ -463,4 +463,9 @@ class FirestoreImpl implements Firestore {
     firestoreClient.close();
     closed = true;
   }
+
+  @Override
+  public FirestoreRpc getFirestoreRpc() {
+    return firestoreClient;
+  }
 }
