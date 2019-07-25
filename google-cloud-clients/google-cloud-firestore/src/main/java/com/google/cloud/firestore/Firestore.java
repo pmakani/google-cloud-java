@@ -19,7 +19,6 @@ package com.google.cloud.firestore;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.Service;
 import com.google.cloud.firestore.spi.v1.FirestoreRpc;
-
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
