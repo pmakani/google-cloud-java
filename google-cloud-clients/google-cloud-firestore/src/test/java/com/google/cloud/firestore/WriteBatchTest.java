@@ -28,6 +28,8 @@ import static org.mockito.Mockito.doReturn;
 
 import com.google.api.gax.rpc.UnaryCallable;
 import com.google.cloud.Timestamp;
+import com.google.cloud.firestore.annotation.Exclude;
+import com.google.cloud.firestore.annotation.PropertyName;
 import com.google.cloud.firestore.spi.v1.FirestoreRpc;
 import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
@@ -137,6 +139,45 @@ public class WriteBatchTest {
 
     CommitRequest commitRequest = commitCapture.getValue();
     assertEquals(commit(writes.toArray(new Write[] {})), commitRequest);
+  }
+
+  public static class User {
+
+    @PropertyName("name")
+    public String name;
+
+    private Integer age;
+
+    public User(String name, Integer age) {
+      this.name = name;
+      this.age = age;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public void setName(String name) {
+      this.name = name;
+    }
+
+    @Exclude
+    public Integer getAge() {
+      return age;
+    }
+
+    public void setAge(Integer age) {
+      this.age = age;
+    }
+  }
+
+  @Test
+  public void setDocumentWithPojo() {
+    doReturn(commitResponse(1, 0))
+        .when(firestoreMock)
+        .sendRequest(
+            commitCapture.capture(), Matchers.<UnaryCallable<CommitRequest, CommitResponse>>any());
+    batch.set(documentReference, new User("test-name", 27));
   }
 
   @Test

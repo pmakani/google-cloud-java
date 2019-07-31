@@ -889,11 +889,13 @@ class CustomClassMapper {
           continue;
         }
 
-        Object propertyValue;
+        Object propertyValue = null;
         if (getters.containsKey(property)) {
           Method getter = getters.get(property);
           try {
-            propertyValue = getter.invoke(object);
+            if (getter.isAnnotationPresent(PropertyName.class)) {
+              propertyValue = getter.invoke(object);
+            }
           } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
           }
@@ -904,7 +906,9 @@ class CustomClassMapper {
             throw new IllegalStateException("Bean property without field or getter: " + property);
           }
           try {
-            propertyValue = field.get(object);
+            if (field.isAnnotationPresent(PropertyName.class)) {
+              propertyValue = field.get(object);
+            }
           } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
           }
@@ -917,7 +921,9 @@ class CustomClassMapper {
         } else {
           serializedValue = CustomClassMapper.serialize(propertyValue, path.child(property));
         }
-        result.put(property, serializedValue);
+        if (serializedValue != null) {
+          result.put(property, serializedValue);
+        }
       }
       return result;
     }
