@@ -615,30 +615,37 @@ class CustomClassMapper {
         constructor = null;
       }
       this.constructor = constructor;
+      for (Field field : clazz.getDeclaredFields()) {
+        if (shouldIncludeField(field)) {
+          fields.put(field.getName(), field);
+        }
+      }
+      for (Method method : clazz.getDeclaredMethods()) {
+        if (shouldIncludeGetter(method)) {
+          getters.put(serializedName(method.getName()), method);
+        }
+      }
       // Add any public getters to properties (including isXyz())
       for (Method method : clazz.getMethods()) {
         if (shouldIncludeGetter(method)) {
-          String propertyName = propertyName(method);
-          addProperty(propertyName);
-          method.setAccessible(true);
-          if (getters.containsKey(propertyName)) {
-            throw new RuntimeException(
-                "Found conflicting getters for name "
-                    + method.getName()
-                    + " on class "
-                    + clazz.getName());
+          String propertyName = propertyName(method, fields);
+          if (propertyName != null) {
+            addProperty(propertyName);
+            method.setAccessible(true);
+            getters.put(propertyName, method);
+            applyGetterAnnotations(method);
           }
-          getters.put(propertyName, method);
-          applyGetterAnnotations(method);
         }
       }
 
       // Add any public fields to properties
       for (Field field : clazz.getFields()) {
         if (shouldIncludeField(field)) {
-          String propertyName = propertyName(field);
-          addProperty(propertyName);
-          applyFieldAnnotations(field);
+          String propertyName = propertyName(field, getters);
+          if (propertyName != null) {
+            addProperty(propertyName);
+            applyFieldAnnotations(field);
+          }
         }
       }
 
@@ -650,41 +657,43 @@ class CustomClassMapper {
         // Add any setters
         for (Method method : currentClass.getDeclaredMethods()) {
           if (shouldIncludeSetter(method)) {
-            String propertyName = propertyName(method);
-            String existingPropertyName = properties.get(propertyName.toLowerCase(Locale.US));
-            if (existingPropertyName != null) {
-              if (!existingPropertyName.equals(propertyName)) {
-                throw new RuntimeException(
-                    "Found setter on "
-                        + currentClass.getName()
-                        + " with invalid case-sensitive name: "
-                        + method.getName());
-              } else {
-                Method existingSetter = setters.get(propertyName);
-                if (existingSetter == null) {
-                  method.setAccessible(true);
-                  setters.put(propertyName, method);
-                  applySetterAnnotations(method);
-                } else if (!isSetterOverride(method, existingSetter)) {
-                  // We require that setters with conflicting property names are
-                  // overrides from a base class
-                  if (currentClass == clazz) {
-                    // TODO: Should we support overloads?
-                    throw new RuntimeException(
-                        "Class "
-                            + clazz.getName()
-                            + " has multiple setter overloads with name "
-                            + method.getName());
-                  } else {
-                    throw new RuntimeException(
-                        "Found conflicting setters "
-                            + "with name: "
-                            + method.getName()
-                            + " (conflicts with "
-                            + existingSetter.getName()
-                            + " defined on "
-                            + existingSetter.getDeclaringClass().getName()
-                            + ")");
+            String propertyName = propertyName(method, fields);
+            if (propertyName != null) {
+              String existingPropertyName = properties.get(propertyName.toLowerCase(Locale.US));
+              if (existingPropertyName != null) {
+                if (!existingPropertyName.equals(propertyName)) {
+                  throw new RuntimeException(
+                      "Found setter on "
+                          + currentClass.getName()
+                          + " with invalid case-sensitive name: "
+                          + method.getName());
+                } else {
+                  Method existingSetter = setters.get(propertyName);
+                  if (existingSetter == null) {
+                    method.setAccessible(true);
+                    setters.put(propertyName, method);
+                    applySetterAnnotations(method);
+                  } else if (!isSetterOverride(method, existingSetter)) {
+                    // We require that setters with conflicting property names are
+                    // overrides from a base class
+                    if (currentClass == clazz) {
+                      // TODO: Should we support overloads?
+                      throw new RuntimeException(
+                          "Class "
+                              + clazz.getName()
+                              + " has multiple setter overloads with name "
+                              + method.getName());
+                    } else {
+                      throw new RuntimeException(
+                          "Found conflicting setters "
+                              + "with name: "
+                              + method.getName()
+                              + " (conflicts with "
+                              + existingSetter.getName()
+                              + " defined on "
+                              + existingSetter.getDeclaringClass().getName()
+                              + ")");
+                    }
                   }
                 }
               }
@@ -693,15 +702,17 @@ class CustomClassMapper {
         }
 
         for (Field field : currentClass.getDeclaredFields()) {
-          String propertyName = propertyName(field);
+          String propertyName = propertyName(field, getters);
 
           // Case sensitivity is checked at deserialization time
           // Fields are only added if they don't exist on a subclass
-          if (properties.containsKey(propertyName.toLowerCase(Locale.US))
-              && !fields.containsKey(propertyName)) {
-            field.setAccessible(true);
-            fields.put(propertyName, field);
-            applyFieldAnnotations(field);
+          if (propertyName != null) {
+            if (properties.containsKey(propertyName.toLowerCase(Locale.US))
+                && !fields.containsKey(propertyName)) {
+              field.setAccessible(true);
+              fields.put(propertyName, field);
+              applyFieldAnnotations(field);
+            }
           }
         }
 
@@ -1097,9 +1108,46 @@ class CustomClassMapper {
       return annotatedName != null ? annotatedName : field.getName();
     }
 
+    private String propertyName(Field field, Map<String, Method> methods) {
+      if (methods.containsKey(field.getName())) {
+        Method method = methods.get(field.getName());
+        if (method.isAnnotationPresent(PropertyName.class)
+            && field.isAnnotationPresent(PropertyName.class)) {
+          return field.getName();
+        } else if (!method.isAnnotationPresent(PropertyName.class)
+            && field.isAnnotationPresent(PropertyName.class)) {
+          this.fields.remove(field.getName());
+          return annotatedName(field);
+        } else if (!field.isAnnotationPresent(PropertyName.class)
+            && method.isAnnotationPresent(PropertyName.class)) {
+          return annotatedName(method);
+        }
+        return field.getName();
+      }
+      return null;
+    }
+
     private static String propertyName(Method method) {
       String annotatedName = annotatedName(method);
       return annotatedName != null ? annotatedName : serializedName(method.getName());
+    }
+
+    private String propertyName(Method method, Map<String, Field> fields) {
+      if (fields.containsKey(serializedName(method.getName()))) {
+        Field field = fields.get(serializedName(method.getName()));
+        if (field.isAnnotationPresent(PropertyName.class)
+            && method.isAnnotationPresent(PropertyName.class)) {
+          return field.getName();
+        } else if (!field.isAnnotationPresent(PropertyName.class)
+            && method.isAnnotationPresent(PropertyName.class)) {
+          this.getters.remove(serializedName(method.getName()));
+          return annotatedName(method);
+        } else if (!method.isAnnotationPresent(PropertyName.class)) {
+          return null;
+        }
+        return serializedName(method.getName());
+      }
+      return null;
     }
 
     private static String annotatedName(AccessibleObject obj) {
