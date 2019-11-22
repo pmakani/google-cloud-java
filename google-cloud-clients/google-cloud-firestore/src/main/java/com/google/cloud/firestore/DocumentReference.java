@@ -26,6 +26,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firestore.v1.ListCollectionIdsRequest;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
@@ -185,7 +186,7 @@ public class DocumentReference {
    * @return An ApiFuture that will be resolved when the write finishes.
    */
   @Nonnull
-  public ApiFuture<WriteResult> update(@Nonnull Object fields) {
+  public ApiFuture<WriteResult> update(@Nonnull Map<String, Object> fields) {
     WriteBatch writeBatch = firestore.batch();
     return extractFirst(writeBatch.update(this, fields).commit());
   }
@@ -199,7 +200,7 @@ public class DocumentReference {
    * @return An ApiFuture that will be resolved when the write finishes.
    */
   @Nonnull
-  public ApiFuture<WriteResult> update(@Nonnull Object fields, Precondition options) {
+  public ApiFuture<WriteResult> update(@Nonnull Map<String, Object> fields, Precondition options) {
     WriteBatch writeBatch = firestore.batch();
     return extractFirst(writeBatch.update(this, fields, options).commit());
   }
